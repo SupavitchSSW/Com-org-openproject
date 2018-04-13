@@ -5,20 +5,21 @@ org 100h
 ;P1 variable
 P1size dw 3
 P1X db 25,25,25,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-P1Y db 10,11,12,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-nextMoveP1 db 25,10
+P1Y db 14,15,16,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+nextMoveP1 db 25,14
 directionP1 db 'w'        
 
 
 ;P2 variable
 P2size dw 3
 P2X db 50,50,50,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-P2Y db 12,11,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-nextMoveP2 db 50,12
+P2Y db 10,9,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+nextMoveP2 db 50,10
 directionP2 db '5'
 
 c db 0
-
+foodPos db 0,0
+foodSpawn db 0
 .code
 
 setup:
@@ -28,22 +29,13 @@ setup:
     mov ah ,00h         
     mov al ,03h
     int 10h  
-
-    mov dh, 5      ;set row (y)
-    mov dl, 5     ;set col (x)
-    mov bh, 00h
-    mov ah, 02h
-    int 10h 
     
-    ;print O
-    mov ah,0ah
-    mov al ,'f'
-    mov bh ,00h
-    mov bl ,00h
-    mov cx ,5
+    ;hide cursor
+    mov ch, 32
+    mov ah, 1       
     int 10h
     
-    
+    call createWall
 
 main:
     mov cx,0FFFFh
@@ -53,12 +45,8 @@ main:
     nop
     loop delayloop
 
-;mp c,4
-;   jne out
-;   inc P1size
-;   out:
-;   inc c
 
+    call createFood
     call getDirection
     call getNextMove
     call checkMoveP1
@@ -82,7 +70,123 @@ main:
 ;                   FUNCTION
 ;==============================================
 
-;w(119)a(97)s(115)d(100) | 8(56)4(52)5(53)6(54)   
+createFood:
+    ;delay spawn time
+    cmp foodSpawn,10
+    je IFcreateFoodOUT
+    inc foodSpawn
+    ret
+    IFcreateFoodOUT:
+    mov foodSpawn,0
+    
+    ;get time sec->dh
+    mov ah,2ch
+    int 21h
+
+    ;time + x % 78 +1 (1...79) 
+    add [foodPos],dh        ;time + x
+    mov dx, 0               ;mod
+    mov al,[foodPos]        ;mod
+    mov bx,78               ;mod
+    div bx                  ;x % 78
+    mov [foodPos],dl        ;x = mod
+    add [foodPos],1         ;x + 1
+    
+    ;x + y % 22 +1 (1...23) 
+    mov al,[foodPos]        
+    add [foodPos+1],al      ;x + y
+    mov dx, 0               ;mod
+    mov al,[foodPos+1]      ;mod
+    mov bx,22               ;mod
+    div bx                  ;y % 22
+    mov [foodPos+1],dl      ;y = mod
+    add [foodPos+1],1       ;y + 1
+
+    ;set curser positon
+    mov dh, [foodPos+1]      ;set row (y)
+    mov dl, [foodPos]        ;set col (x)
+    mov bh, 00h
+    mov ah, 02h
+    int 10h 
+    ;print f
+    mov ah,09h
+    mov al,'F'
+    mov bl,0Eh
+    mov cx,1
+    int 10h
+
+    ret
+
+createWall:
+    ;print top
+    mov dh, 0      ;set row (y)
+    mov dl, 0     ;set col (x)
+    mov bh, 00h
+    mov ah, 02h
+    int 10h 
+    
+    mov ah,09h
+    mov al,'X'
+    mov bl,07h
+    mov cx,80
+    int 10h
+    
+    ;print botton
+    mov dh, 24      ;set row (y)
+    mov dl, 0     ;set col (x)
+    mov bh, 00h
+    mov ah, 02h
+    int 10h 
+    
+    mov ah,09h
+    mov al,'X'
+    mov bl,07h
+    mov cx,80
+    int 10h
+    
+    ;print left
+    mov dh,0 ;y
+    mov dl,0 ;x
+    mov cx,25
+    L1createWall:
+    push cx
+    ;set pos
+    mov bh, 00h
+    mov ah, 02h
+    int 10h 
+    ;print W
+    mov ah,09h
+    mov al,'X'
+    mov bl,07h
+    mov cx,1
+    int 10h
+    inc dh
+    pop cx
+    loop L1createWall
+    
+    ;print right
+    mov dh,0 ;y
+    mov dl,79 ;x
+    mov cx,25
+    L2createWall:
+    push cx
+    ;set pos
+    mov bh, 00h
+    mov ah, 02h
+    int 10h 
+    ;print W
+    mov ah,09h
+    mov al,'X'
+    mov bl,07h
+    mov cx,1
+    int 10h
+    inc dh
+    pop cx
+    loop L2createWall
+    
+    ret
+
+
 getDirection:
     mov ah,0Bh              ;check input buffer
     int 21h
@@ -155,33 +259,6 @@ getDirection:
     
 
 getNextMove:
-    mov dh, 0      ;set row (y)
-    mov dl, 0     ;set col (x)
-    mov bh, 00h
-    mov ah, 02h
-    int 10h 
-    
-    ;print O
-    mov ah,0ah
-    mov al ,directionP1
-    mov bh ,00h
-    mov bl ,00h
-    mov cx ,1
-    int 10h
-    
-    mov dh, 0      ;set row (y)
-    mov dl, 1     ;set col (x)
-    mov bh, 00h
-    mov ah, 02h
-    int 10h 
-    
-    ;print O
-    mov ah,0ah
-    mov al ,directionP2
-    mov bh ,00h
-    mov bl ,00h
-    mov cx ,1
-    int 10h
     
     ;P1
     cmp directionP1,'w'         ;if directionP1 == w
@@ -266,11 +343,10 @@ printSnakeP1:
     int 10h 
     
     ;print O
-    mov ah,0ah
-    mov al ,'H'
-    mov bh ,00h
-    mov bl ,00h
-    mov cx ,1
+    mov ah,09h
+    mov al,'O'
+    mov bl,0Bh
+    mov cx,1
     int 10h
     
     ;print Body to old head
@@ -282,10 +358,9 @@ printSnakeP1:
     int 10h 
     
     ;print O
-    mov ah,0ah
-    mov al ,'B'
-    mov bh ,00h
-    mov bl ,00h
+    mov ah,09h
+    mov al ,'O'
+    mov bl ,3
     mov cx ,1
     int 10h
     
@@ -298,11 +373,10 @@ printSnakeP1:
     mov ah, 02h
     int 10h 
     
-    ;print O
-    mov ah,0ah
+    ;print tail
+    mov ah,9h
     mov al ,' '
-    mov bh ,00h
-    mov bl ,00h
+    mov bl ,0
     mov cx ,1
     int 10h
     
@@ -318,10 +392,9 @@ printSnakeP2:
     int 10h 
     
     ;print O
-    mov ah,0ah
-    mov al ,'h'
-    mov bh ,00h
-    mov bl ,00h
+    mov ah,9h
+    mov al ,'O'
+    mov bl ,0Ch
     mov cx ,1
     int 10h
     
@@ -334,10 +407,9 @@ printSnakeP2:
     int 10h 
     
     ;print O
-    mov ah,0ah
-    mov al ,'b'
-    mov bh ,00h
-    mov bl ,00h
+    mov ah,9h
+    mov al ,'O'
+    mov bl ,4
     mov cx ,1
     int 10h
     
@@ -351,10 +423,9 @@ printSnakeP2:
     int 10h 
     
     ;print O
-    mov ah,0ah
+    mov ah,9h
     mov al ,' '
-    mov bh ,00h
-    mov bl ,00h
+    mov bl ,0
     mov cx ,1
     int 10h
     
@@ -372,15 +443,15 @@ checkMoveP1:
     mov ah,08h
     int 10h
     
-    cmp al,'h'                  ;if nextmove == headP2
+    cmp ah,0ch                  ;if nextmove == headP2
     je draw
-    cmp al,'b'                  ;if nextmove == bodyP2
+    cmp ah,4                  ;if nextmove == bodyP2
     je P1_lost
-    cmp al,'B'                  ;if nextmove == bodyP1`
+    cmp ah,3                  ;if nextmove == bodyP1`
     je P1_lost
-    cmp al,'W'                  ;if nextmove == wall
+    cmp al,'X'                  ;if nextmove == wall
     je p1_lost                  
-    cmp al,'f'                  ;if nextmove == food
+    cmp al,'F'                  ;if nextmove == food
     jne IFFoodcheckMoveP1       
     inc P1size                  ;inc size
     IFFoodcheckMoveP1:
@@ -398,15 +469,15 @@ checkMoveP2:
     mov ah,08h
     int 10h
     
-    cmp al,'H'                  ;if nextmove == headP1
+    cmp ah,0Bh                  ;if nextmove == headP1
     je draw
-    cmp al,'B'                  ;if nextmove == bodyP1
+    cmp ah,3                  ;if nextmove == bodyP1
     je P2_lost
-    cmp al,'b'                  ;if nextmove == bodyP2`
+    cmp ah,4                  ;if nextmove == bodyP2`
     je P2_lost
-    cmp al,'W'                  ;if nextmove == wall
+    cmp al,'X'                  ;if nextmove == wall
     je p2_lost                  
-    cmp al,'f'                  ;if nextmove == food
+    cmp al,'F'                  ;if nextmove == food
     jne IFFoodcheckMoveP2       
     inc P2size                  ;inc size
     IFFoodcheckMoveP2:
