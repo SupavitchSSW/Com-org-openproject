@@ -1,0 +1,59 @@
+printMenu
+
+getDireaction
+getNextMove
+checkMoveP1
+moveSnakeP1
+checkMoveP2
+moveSnakeP2
+printSnake
+
+
+
+getNextMove:
+	if diractionP1 is left:
+		nextmoveP1 = getPos
+	if diractionP1 is right:
+		nextmoveP1 = getPos
+	if diractionP1 is up:
+		nextmoveP1 = getPos
+	if diractionP1 is down:
+		nextmoveP1 = getPos
+	if diractionP2 is left:
+		nextmoveP2 = getPos
+	if diractionP2 is right:
+		nextmoveP2 = getPos
+	if diractionP2 is up:
+		nextmoveP2 = getPos
+	if diractionP2 is down:
+		nextmoveP2 = getPos
+
+
+checkMoveP1:
+	if nextmoveP1 == headP2
+		draw
+	if nextmoveP1 == bodyP2
+		P1_lost
+	if nextmoveP1 == wall
+		P1_lost
+	if nextmoveP1 == food
+		addTailP1
+	
+checkMoveP2:
+	if nextmoveP2 == headP1
+		draw
+	if nextmoveP2 == bodyP1
+		P2_lost
+	if nextmoveP2 == wall
+		P2_lost
+	if nextmoveP2 == food
+		addTailP2
+
+
+moveSnakeP1:
+	moveSnakeArrP1
+
+moveSnakeP2:
+	moveSnakeArrP2
+
+printSnake:
