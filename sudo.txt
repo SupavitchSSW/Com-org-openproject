@@ -8,8 +8,16 @@ checkMoveP2
 moveSnakeP2
 printSnake
 
-
-
+getDireaction:
+	if key press:
+		if input == w && diractionP1 != down:
+			diractionP1 = up
+		if input == a && diracitonP1 != right:
+			diractionP1 = left
+		if input == s && diractionP1 != up:
+			diractionP1 = down
+		if input == d && diractionP1 != left:
+			diractionP1 = right
 getNextMove:
 	if diractionP1 is left:
 		nextmoveP1 = getPos
@@ -34,6 +42,8 @@ checkMoveP1:
 		draw
 	if nextmoveP1 == bodyP2
 		P1_lost
+	if nextmoveP1 == bodyP1
+		P1_lost
 	if nextmoveP1 == wall
 		P1_lost
 	if nextmoveP1 == food
@@ -44,6 +54,8 @@ checkMoveP2:
 		draw
 	if nextmoveP2 == bodyP1
 		P2_lost
+	if nextmoveP2 == bodyP2
+		P1_lost
 	if nextmoveP2 == wall
 		P2_lost
 	if nextmoveP2 == food

@@ -29,9 +29,29 @@ setup:
     mov al ,03h
     int 10h  
 
+    mov dh, 5      ;set row (y)
+    mov dl, 5     ;set col (x)
+    mov bh, 00h
+    mov ah, 02h
+    int 10h 
+    
+    ;print O
+    mov ah,0ah
+    mov al ,'f'
+    mov bh ,00h
+    mov bl ,00h
+    mov cx ,5
+    int 10h
+    
     
 
 main:
+    mov cx,0FFFFh
+    delayloop:
+    nop
+    nop
+    nop
+    loop delayloop
 
 ;mp c,4
 ;   jne out
@@ -41,8 +61,10 @@ main:
 
     call getDirection
     call getNextMove
+    call checkMoveP1
     call moveP1
     call printSnakeP1
+    call checkMoveP2
     call moveP2
     call printSnakeP2
     
@@ -129,7 +151,6 @@ getDirection:
     je IF6getDirectionOUT
     mov directionP2,'6'     ;directionP1 = 6
     IF6getDirectionOUT:
-    
     ret
     
 
@@ -203,11 +224,9 @@ getNextMove:
     jne IF6getNextMoveOUT
     inc [nextMoveP2]            ;x++
     IF6getNextMoveOUT:
-    
+  
     ret
 
-
-    
 ;nextMove,X,Y,size
 moveP1:
     mov ah ,[nextMoveP1]      ;x
@@ -300,7 +319,7 @@ printSnakeP2:
     
     ;print O
     mov ah,0ah
-    mov al ,'H'
+    mov al ,'h'
     mov bh ,00h
     mov bl ,00h
     mov cx ,1
@@ -316,7 +335,7 @@ printSnakeP2:
     
     ;print O
     mov ah,0ah
-    mov al ,'B'
+    mov al ,'b'
     mov bh ,00h
     mov bl ,00h
     mov cx ,1
@@ -341,5 +360,62 @@ printSnakeP2:
     
     ret
     
+checkMoveP1:
+    ;set curser positon
+    mov dh, [nextMoveP1+1]      ;set row (y)
+    mov dl, [nextMoveP1]     ;set col (x)
+    mov bh, 00h
+    mov ah, 02h
+    int 10h 
+    
+    ;read char at nextMove to al
+    mov ah,08h
+    int 10h
+    
+    cmp al,'h'                  ;if nextmove == headP2
+    je draw
+    cmp al,'b'                  ;if nextmove == bodyP2
+    je P1_lost
+    cmp al,'B'                  ;if nextmove == bodyP1`
+    je P1_lost
+    cmp al,'W'                  ;if nextmove == wall
+    je p1_lost                  
+    cmp al,'f'                  ;if nextmove == food
+    jne IFFoodcheckMoveP1       
+    inc P1size                  ;inc size
+    IFFoodcheckMoveP1:
+    ret
+    
+checkMoveP2:
+    ;set curser positon
+    mov dh, [nextMoveP2+1]      ;set row (y)
+    mov dl, [nextMoveP2]     ;set col (x)
+    mov bh, 00h
+    mov ah, 02h
+    int 10h 
+    
+    ;read char at nextMove to al
+    mov ah,08h
+    int 10h
+    
+    cmp al,'H'                  ;if nextmove == headP1
+    je draw
+    cmp al,'B'                  ;if nextmove == bodyP1
+    je P2_lost
+    cmp al,'b'                  ;if nextmove == bodyP2`
+    je P2_lost
+    cmp al,'W'                  ;if nextmove == wall
+    je p2_lost                  
+    cmp al,'f'                  ;if nextmove == food
+    jne IFFoodcheckMoveP2       
+    inc P2size                  ;inc size
+    IFFoodcheckMoveP2:
+    ret
+    
+    
+draw:
+P1_lost:
+P2_lost:
+
     
 end setup
